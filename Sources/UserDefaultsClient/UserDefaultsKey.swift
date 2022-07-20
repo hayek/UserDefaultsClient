@@ -10,7 +10,7 @@ protocol OptionalType {
 }
 extension Optional: OptionalType {}
 
-public struct SFGUserDefaultsKey<A: PlistCompatible> {
+public struct UserDefaultsKey<A: Codable> {
     let key: String
     let `default`: A?
     
@@ -31,7 +31,7 @@ public struct SFGUserDefaultsKey<A: PlistCompatible> {
     
 }
 
-extension SFGUserDefaultsKey where A:PlistCompatible, A: OptionalType, A.Wrapped:PlistCompatible {
+extension UserDefaultsKey where A:Codable, A: OptionalType, A.Wrapped:Codable {
     init(key: String) {
         self.key = key
         self.default = nil
