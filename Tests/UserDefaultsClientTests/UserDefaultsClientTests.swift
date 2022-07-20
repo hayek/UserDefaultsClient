@@ -1,23 +1,54 @@
 import XCTest
 @testable import UserDefaultsClient
 
-extension SFGUserDefaultsKey {
-    static var someBoolKey: SFGUserDefaultsKey<Bool> { .init(key: "aaa", default: true)}
-    static var someInt: SFGUserDefaultsKey<Int> { .init(key: "fff", default: 2) }
-    static var someOptionalInt: SFGUserDefaultsKey<Int?> { .init(key: "ds") }
+struct SomeCodableStruct: Codable, Equatable {
+    let name: String
+}
+
+extension UserDefaultsKey {
+    static var someBoolKey: UserDefaultsKey<Bool> { .init(key: "someBoolKey", default: true)}
+    static var someInt: UserDefaultsKey<Int> { .init(key: "someInt", default: 2) }
+    static var someOptionalInt: UserDefaultsKey<Int?> { .init(key: "someOptionalInt") }
+    static var someStruct: UserDefaultsKey<SomeCodableStruct> {.init(key: "someStruct", default: .init(name: "default something")) }
+
+}
+
+extension UserDefaultsClient {
+    static var storage: [String: Any] = [:]
+    
+    static var testClient: Self {
+        .init(
+            getValue: { key in
+                storage[key]
+            } ,
+            setValueForKey: { value, key in
+                storage[key] = value
+            })
+    }
 }
 
 final class UserDefaultsClientTests: XCTestCase {
-    func testExample() throws {
-//        let bbb = SFGUserDefaultsClient.standard.value(key: .someInt)
-//        let aaa = SFGUserDefaultsClient.standard.value(key: .someOptionalInt)
-        let ccc = SFGUserDefaultsClient.standard.value(key: .someBoolKey)
-        XCTAssertTrue(ccc)
-//        SFGUserDefaultsClient.standard.setValue(false, for: .someBoolKey)
-//        SFGUserDefaultsClient.standard.setValue(nil, for: .someOptionalInt)
-//
-//        let mock = SFGUserDefaultsClient.mock.value(key: .someInt)
+    func testValues() throws {
+        XCTAssertTrue(UserDefaultsClient.testClient.value(key: .someBoolKey))
+        UserDefaultsClient.testClient.setValue(false, for: .someBoolKey)
+        XCTAssertFalse(UserDefaultsClient.testClient.value(key: .someBoolKey))
         
-        
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someInt), 2)
+        UserDefaultsClient.testClient.setValue(3, for: .someInt)
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someInt), 3)
+    }
+    
+    func testOptionalValues() throws {
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someOptionalInt), nil)
+        UserDefaultsClient.testClient.setValue(3, for: .someOptionalInt)
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someOptionalInt), 3)
+        UserDefaultsClient.testClient.setValue(nil, for: .someOptionalInt)
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someOptionalInt), nil)
+    }
+    
+    func testCodableValues() throws {
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someStruct), .init(name: "default something"))
+        UserDefaultsClient.testClient.setValue(.init(name: "something else"), for: .someStruct)
+        XCTAssertEqual(UserDefaultsClient.testClient.value(key: .someStruct), .init(name: "something else"))
     }
 }
